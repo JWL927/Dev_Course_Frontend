@@ -11,24 +11,25 @@ export default function SuggestKeywords({
   this.state = initialState;
 
   this.setState = (nextState) => {
-    this.state = nextState;
+    this.state = { ...this.state, ...nextState };
     this.render();
   };
 
   this.render = () => {
+    const { keywords, cursor } = this.state;
     $suggest.innerHTML = `
         <ul>
-            ${this.state
+            ${keywords
               .map(
-                (keyword) => `
-                <li>${keyword}</li>
+                (keyword, i) => `
+                <li class="${cursor === i ? "active" : ""}">${keyword}</li>
             `
               )
               .join("")}
         </ul>
     `;
 
-    $suggest.style.display = this.state.length > 0 ? "inline-block" : "none";
+    $suggest.style.display = keywords.length > 0 ? "inline-block" : "none";
   };
 
   this.render();
@@ -38,6 +39,27 @@ export default function SuggestKeywords({
 
     if ($li) {
       onKeywordSelected($li.textContent);
+    }
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if ($suggest.style.display !== "none") {
+      const { key } = e;
+      if (key === "ArrowUp") {
+        const nextCursor = this.state.cursor - 1;
+        this.setState({
+          ...this.state,
+          cursor: nextCursor > 0 ? this.state.keywords.length - 1 : nextCursor,
+        });
+      } else if (key === "ArrowDown") {
+        const nextCursor = this.state.cursor + 1;
+        this.setState({
+          ...this.state,
+          cursor: nextCursor > this.state.keywords.length - 1 ? 0 : nextCursor,
+        });
+      } else if (key === "Enter") {
+        onKeywordSelected(this.state.keywords[this.state.cursor]);
+      }
     }
   });
 }
